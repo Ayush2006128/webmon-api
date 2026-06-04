@@ -5,7 +5,7 @@ from langchain_core.messages import SystemMessage, HumanMessage, RemoveMessage
 from langgraph.graph import StateGraph, START, END, MessagesState
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.prebuilt import ToolNode
-from .tools import search_web, extract_web_content
+from .tools import search_web, read_and_store_url, search_stored_pages
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -27,7 +27,7 @@ llm = ChatGroq(
     max_retries=2
 )
 
-tools = [search_web, extract_web_content]
+tools = [search_web, read_and_store_url, search_stored_pages]
 llm_with_tools = llm.bind_tools(tools)
 tool_node = ToolNode(tools)
 
@@ -71,7 +71,7 @@ def summarize_conversation(state: GraphState):
 # ==========================================
 # 4. Routing Logic
 # ==========================================
-def should_continue(state: GraphState) -> Literal["tools", "summarize_conversation", END]:
+def should_continue(state: GraphState) -> str:
     """Determines the next node based on tool calls and message length."""
     messages = state["messages"]
     last_message = messages[-1]

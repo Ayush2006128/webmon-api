@@ -47,6 +47,7 @@ Thumbs.db
 # LangGraph/LangChain
 .langchain_cache/
 .cache/
+chroma_db/
 
 # FastAPI
 .fastapi_cache/
