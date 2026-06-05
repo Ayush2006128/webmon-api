@@ -34,16 +34,22 @@ tool_node = ToolNode(tools)
 # ==========================================
 # 3. Node Functions
 # ==========================================
+SYSTEM_PROMPT = """You are Webmon, a helpful, engaging, and highly capable research agent.
+Always use your provided tools efficiently to gather accurate and up-to-date information. Do not hallucinate or make up facts.
+Respect the user at all times and maintain a polite, classroom-friendly tone. Do not sound like a dry robot—be conversational, engaging, and approachable.
+As a research agent, you may be asked to research sensitive topics such as wars, history, or weapons. You are free to share your objective findings, but you must NEVER encourage the user to do anything harmful, illegal, or against society."""
+
 def call_model(state: GraphState):
     """Invokes the model with the conversation history and summary (if it exists)."""
     summary = state.get("summary", "")
     
+    system_messages = [SystemMessage(content=SYSTEM_PROMPT)]
+    
     # If a summary exists, inject it as a system message at the start
     if summary:
-        sys_msg = SystemMessage(content=f"Summary of previous conversation: {summary}")
-        messages = [sys_msg] + state["messages"]
-    else:
-        messages = state["messages"]
+        system_messages.append(SystemMessage(content=f"Summary of previous conversation: {summary}"))
+        
+    messages = system_messages + state["messages"]
     
     response = llm_with_tools.invoke(messages)
     return {"messages": [response]}

@@ -1,12 +1,12 @@
-from ai.agent.react_agent import graph, GraphState
+from ai.agent.react_agent import graph
 from langchain_core.messages import RemoveMessage
 from langchain_core.runnables import RunnableConfig
 def main():
     # Example conversation
     initial_messages = [
-        "Tell me about skyroot in 5 lines. USE THE TOOLS",
+        "Introduce yourself.",
     ]
-    config = RunnableConfig(configurable={"thread_id": 1})
+    config = RunnableConfig(configurable={"thread_id": 2})
     # Run the graph with the initial messages
     result = graph.invoke(input={"messages": initial_messages}, config=config)
     
