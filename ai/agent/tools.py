@@ -13,8 +13,12 @@ from cohere import client, AsyncClient
 
 load_dotenv()
 
-cohere_client = client.Client(os.environ["COHERE_API_KEY"])
-async_cohere_client = AsyncClient(os.environ["COHERE_API_KEY"])
+cohere_key = os.environ["COHERE_API_KEY"]
+tavily_key = os.environ["TAVILY_API_KEY"]
+
+cohere_client = client.Client(cohere_key)
+async_cohere_client = AsyncClient(cohere_key)
+tavily_client = TavilyClient(api_key=tavily_key)
 
 # Global Chroma setup
 embeddings = CohereEmbeddings(client=client, async_client=async_cohere_client, model="embed-english-v3.0")
@@ -37,8 +41,8 @@ def search_web(query: str, search_depth: Literal["basic", "advanced", "fast", "u
     Returns:
         str: A string containing the search results.
     """
-    client = TavilyClient(api_key=os.environ["TAVILY_API_KEY"])
-    results = client.search(query=query, num_results=num_results, search_depth=search_depth)
+    
+    results = tavily_client.search(query=query, num_results=num_results, search_depth=search_depth)
     return results
 
 @tool
@@ -51,8 +55,8 @@ def read_and_store_url(urls: List[str] | str, depth: Literal["basic", "advanced"
         urls (List[str] | str): A list of URLs or a single URL to read and store.
         depth (Literal["basic", "advanced"]): The depth of content extraction.
     """
-    client = TavilyClient(api_key=os.environ["TAVILY_API_KEY"])
-    content = client.extract(urls=urls, extract_depth=depth)
+    
+    content = tavily_client.extract(urls=urls, extract_depth=depth)
     
     results = content.get("results", [])
     if not results:
@@ -76,6 +80,30 @@ def read_and_store_url(urls: List[str] | str, depth: Literal["basic", "advanced"
         return f"Successfully read and stored {len(docs)} chunks from {len(results)} pages. You can now use search_stored_pages to query this content."
     return "No text content found to store."
 
+
+@tool
+def get_url_map(base_url: str, instructions: str) -> list:
+    """
+    This tool can traverse websites like a graph
+    and can explore hundreds of paths in parallel
+    with intelligent discovery to generate comprehensive site maps.
+
+    Use this tool if you don't know what pages are available on website.
+
+    Args:
+        base_url (str): Base URL of website.
+        instructions (str): Natural language instructions for the crawler.
+
+    Returns:
+       A list containing URLs
+    """
+
+    results = tavily_client.map(url=base_url, instructions=instructions)
+    urls = results["results"]
+
+    return urls
+
+
 @tool
 def search_stored_pages(query: str, num_results: int = 3) -> str:
     """
@@ -95,3 +123,5 @@ def search_stored_pages(query: str, num_results: int = 3) -> str:
         formatted.append(f"Source [{i+1}] ({doc.metadata.get('url')}):\n{doc.page_content}\n")
         
     return "\\n".join(formatted)
+
+
