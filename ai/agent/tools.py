@@ -123,5 +123,3 @@ def search_stored_pages(query: str, num_results: int = 3) -> str:
         formatted.append(f"Source [{i+1}] ({doc.metadata.get('url')}):\n{doc.page_content}\n")
         
     return "\\n".join(formatted)
-
-

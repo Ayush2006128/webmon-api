@@ -1,12 +1,13 @@
 from ai.agent.react_agent import graph
 from langchain_core.messages import RemoveMessage
 from langchain_core.runnables import RunnableConfig
+
 def main():
     # Example conversation
     initial_messages = [
-        "Introduce yourself.",
+        "Hey! Search LlamaIndex documentation to build a semantic chunking RAG",
     ]
-    config = RunnableConfig(configurable={"thread_id": 2})
+    config = RunnableConfig(configurable={"thread_id": 3})
     # Run the graph with the initial messages
     result = graph.invoke(input={"messages": initial_messages}, config=config)
     
