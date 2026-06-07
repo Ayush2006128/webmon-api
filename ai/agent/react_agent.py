@@ -22,14 +22,24 @@ class GraphState(MessagesState):
 # ==========================================
 # Initialize Groq as the provider
 llm = ChatGroq(
-    model="openai/gpt-oss-20b", # Swapped to a standard Groq model
-    temperature=0.2,
+    model="llama3.1-8b-instruct", # Default
+    temperature=0.7,
     max_retries=2
 )
 
 tools = [search_web, read_and_store_url, search_stored_pages]
 llm_with_tools = llm.bind_tools(tools)
 tool_node = ToolNode(tools)
+
+def set_agent_model(model_name: str):
+    global llm, llm_with_tools
+    llm = ChatGroq(
+        model=model_name,
+        temperature=0.7,
+        max_retries=2
+    )
+    llm_with_tools = llm.bind_tools(tools)
+    return True
 
 # ==========================================
 # 3. Node Functions
