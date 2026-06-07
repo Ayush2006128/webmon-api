@@ -1,6 +1,7 @@
 import os
 from typing import List
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Security, Depends
+from fastapi.security.api_key import APIKeyHeader
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from groq import Groq
@@ -9,6 +10,15 @@ from ai.helpers import ainvoke_agent
 from ai.agent.react_agent import set_agent_model
 
 load_dotenv()
+
+API_KEY_NAME = "X-API-Key"
+API_KEY = os.getenv("API_KEY", "your-super-secret-key") # You should set API_KEY in your Render environment variables!
+api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
+
+async def get_api_key(api_key_header: str = Security(api_key_header)):
+    if api_key_header == API_KEY:
+        return api_key_header
+    raise HTTPException(status_code=403, detail="Invalid API Key")
 
 app = FastAPI(title="Webmon API")
 
@@ -22,7 +32,7 @@ class ChatResponse(BaseModel):
 class ModelSelection(BaseModel):
     model_name: str
 
-@app.post("/chat", response_model=ChatResponse)
+@app.post("/chat", response_model=ChatResponse, dependencies=[Depends(get_api_key)])
 async def chat(request: ChatRequest):
     try:
         # Use async helper to not block the event loop
@@ -31,7 +41,7 @@ async def chat(request: ChatRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/models", response_model=List[str])
+@app.get("/models", response_model=List[str], dependencies=[Depends(get_api_key)])
 def get_models():
     try:
         client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
@@ -48,7 +58,7 @@ def get_models():
             "gemma-7b-it"
         ]
 
-@app.post("/model")
+@app.post("/model", dependencies=[Depends(get_api_key)])
 def select_model(selection: ModelSelection):
     try:
         set_agent_model(selection.model_name)
