@@ -29,7 +29,7 @@ vector_store = Chroma(
 )
 
 @tool
-def search_web(query: str, search_depth: Literal["basic", "advanced", "fast", "ultra-fast"], num_results: int = 5) -> dict:
+def search_web(query: str, search_depth: Literal["basic", "advanced", "fast", "ultra-fast"], num_results: int = 5, include_domains: List[str] = None, exclude_domains: List[str] = None) -> dict:
     """
     Search the web for the given query and return the results.
 
@@ -37,12 +37,14 @@ def search_web(query: str, search_depth: Literal["basic", "advanced", "fast", "u
         query (str): The search query.
         num_results (int): The number of search results to return.
         search_depth (Literal["basic", "advanced", "fast", "ultra-fast"]): The depth to search.
+        include_domains (List[str], optional): Domains to include in the search.
+        exclude_domains (List[str], optional): Domains to exclude from the search.
 
     Returns:
-        str: A string containing the search results.
+        dict: A string containing the search results.
     """
     
-    results = tavily_client.search(query=query, num_results=num_results, search_depth=search_depth)
+    results = tavily_client.search(query=query, num_results=num_results, search_depth=search_depth, include_domains=include_domains, exclude_domains=exclude_domains)
     return results
 
 @tool
