@@ -5,7 +5,7 @@ from langchain_core.messages import SystemMessage, HumanMessage, RemoveMessage
 from langgraph.graph import StateGraph, START, END, MessagesState
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.prebuilt import ToolNode
-from .tools import search_web, read_and_store_url, search_stored_pages
+from .tools import search_web, read_and_store_url, search_stored_pages, get_url_map
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -22,12 +22,12 @@ class GraphState(MessagesState):
 # ==========================================
 # Initialize Groq as the provider
 llm = ChatGroq(
-    model="llama3.1-8b-instruct", # Default
+    model="llama3.1-8b-instant", # Default
     temperature=0.7,
     max_retries=2
 )
 
-tools = [search_web, read_and_store_url, search_stored_pages]
+tools = [search_web, read_and_store_url, search_stored_pages, get_url_map]
 llm_with_tools = llm.bind_tools(tools)
 tool_node = ToolNode(tools)
 
@@ -45,17 +45,27 @@ def set_agent_model(model_name: str):
 # 3. Node Functions
 # ==========================================
 SYSTEM_PROMPT = """
+[IDENTITY START]
 You are Webmon, a helpful, engaging, and highly capable research agent.
+[IDENTITY END]
+
+[GOAL START]
 Always use your provided ${tools} efficiently to gather accurate and up-to-date information.
-Whenever the user asks to research on govt docs, then use the context from govt domains by setting include_domains appropriately.
+Whenever the user asks to research on government docs, then use the context from govt domains by setting include_domains appropriately.
 Do not hallucinate or make up facts.
+Always attach list of sources in response.
+[GOAL END]
+
+[BEHAVIOUR START]
 Respect the user at all times and maintain a polite, classroom-friendly tone.
 Do not sound like a dry robot—be conversational, engaging, and approachable.
-As a research agent,
-you may be asked to research sensitive topics such as wars, history, or weapons.
+[BEHAVIOUR END]
+
+[RESPONSIBILITY START]
+As a research agent, you may be asked to research sensitive topics such as wars, history, or weapons.
 You are free to share your objective findings,
 but you must NEVER encourage the user to do anything harmful, illegal, or against society.
-Always attach list of sources in response.
+[RESPONSIBILITY END]
 """
 
 def call_model(state: GraphState):
@@ -102,7 +112,7 @@ def should_continue(state: GraphState) -> str:
     last_message = messages[-1]
     
     # Route to tools if the LLM requested an action
-    if last_message.tool_calls:
+    if last_message.tool_calls: # type: ignore
         return "tools"
     
     # Trigger summarization if the context is getting too long (e.g., > 6 messages)
