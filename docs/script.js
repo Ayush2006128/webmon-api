@@ -20,3 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
         observer.observe(card);
     });
 });
+
+function integrateBtn() {
+    console.log("clicked")
+}
