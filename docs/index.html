@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Webmon | AI Research Agent</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- Three.js for Fluid Background -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="three-bg.js" defer></script>
+</head>
+<body>
+    <div class="glow-bg" id="canvas-container"></div>
+    <nav class="navbar">
+        <a href="index.html" class="logo">
+            <span class="logo-text">Webmon</span>
+        </a>
+        <div class="nav-links">
+            <a href="index.html" class="active">Overview</a>
+            <a href="terms.html">Terms</a>
+            <a href="privacy.html">Privacy</a>
+        </div>
+    </nav>
+
+    <main class="container">
+        <header class="hero">
+            <div class="badge">Currently in Discord. Web & Mobile arriving soon.</div>
+            <h1 class="hero-title">Intelligent research,<br>autonomous synthesis.</h1>
+            <p class="hero-subtitle">Deploy Webmon, the advanced AI research agent designed to parse, analyze, and deliver high-fidelity insights directly to your workspace.</p>
+            <div class="hero-cta">
+                <button class="btn primary">Integrate Now</button>
+            </div>
+        </header>
+
+        <section class="grid-section" id="capabilities">
+            <h2 class="section-heading">Core Capabilities</h2>
+            <div class="card-grid">
+                <div class="card">
+                    <div class="card-icon">✧</div>
+                    <h3>Deep Context Analysis</h3>
+                    <p>Webmon processes complex queries, maintaining deep contextual awareness across long-running research tasks and conversations.</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon">⚡</div>
+                    <h3>Rapid Information Retrieval</h3>
+                    <p>Access and synthesize information from vast datasets in milliseconds, accelerating your workflow and decision-making.</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon">⟡</div>
+                    <h3>Autonomous Synthesis</h3>
+                    <p>Go beyond search. Webmon intelligently connects disparate data points to generate comprehensive, publication-ready summaries.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="grid-section" id="applications">
+            <h2 class="section-heading">Applications</h2>
+            <div class="card-grid">
+                <div class="card">
+                    <h3>Academic & Technical Research</h3>
+                    <p>Automate literature reviews, extract key findings from technical documentation, and summarize complex research papers.</p>
+                </div>
+                <div class="card">
+                    <h3>Strategic Intelligence</h3>
+                    <p>Monitor market trends, aggregate competitor analysis, and receive real-time data briefings tailored to your organizational needs.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="info-section" id="technical">
+            <h2 class="section-heading">Built with the Best in AI</h2>
+            <div class="card-grid" style="margin-bottom: 2rem;">
+                <div class="card">
+                    <h3>Groq & Llama 3</h3>
+                    <p>Powered by <strong>ChatGroq</strong> and the lightning-fast <code>llama-3.1-8b-instant</code> model for near-instant inference and high-fidelity reasoning.</p>
+                </div>
+                <div class="card">
+                    <h3>LangChain & LangGraph</h3>
+                    <p>Orchestrated using a stateful <strong>ReAct Agent</strong> architecture via LangGraph, complete with persistent memory, cyclic graphs, and dynamic tool binding.</p>
+                </div>
+                <div class="card">
+                    <h3>Tavily Search API</h3>
+                    <p>Integrated with <strong>Tavily</strong> for advanced web search, content extraction, and intelligent site mapping to gather real-time data.</p>
+                </div>
+                <div class="card">
+                    <h3>Cohere & ChromaDB</h3>
+                    <p>Utilizes <strong>CohereEmbeddings</strong> (v3.0) and a local <strong>Chroma</strong> vector store for semantic similarity search over extracted document chunks.</p>
+                </div>
+            </div>
+            <div class="tech-card">
+                <h2 class="section-heading">Deployment Strategy</h2>
+                <p>Webmon is engineered on a high-throughput backend optimized for these AI integrations. Currently operating as a sophisticated Discord integration, the platform is evolving into a unified ecosystem. The core intelligence API will soon power dedicated, cross-platform Web and Mobile (iOS/Android) interfaces, ensuring a seamless research experience across all devices.</p>
+            </div>
+        </section>
+    </main>
+    <script src="script.js"></script>
+</body>
+</html>

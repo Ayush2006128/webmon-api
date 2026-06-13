@@ -22,7 +22,7 @@ class GraphState(MessagesState):
 # ==========================================
 # Initialize Groq as the provider
 llm = ChatGroq(
-    model="llama3.1-8b-instant", # Default
+    model="llama-3.1-8b-instant", # Default
     temperature=0.7,
     max_retries=2
 )

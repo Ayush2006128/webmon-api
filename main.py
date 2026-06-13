@@ -21,7 +21,7 @@ from auth import get_password_hash, verify_password, create_access_token, get_cu
 load_dotenv()
 
 API_KEY_NAME = "X-API-Key"
-API_KEY = os.getenv("API_KEY", "your-super-secret-key") # You should set API_KEY in your Render environment variables!
+API_KEY = os.getenv("API_KEY", "your-super-secret-key") # You should set API_KEY in your hosting provider environment variables
 api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
 
 async def get_api_key(api_key_header: str = Security(api_key_header)):
@@ -97,7 +97,7 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
         HTTPException: If the email or password is incorrect (401 Unauthorized).
     """
     user = db.query(User).filter(User.email == form_data.username).first()
-    if not user or not verify_password(form_data.password, user.hashed_password):
+    if not user or not verify_password(form_data.password, user.hashed_password): # type: ignore
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
@@ -138,7 +138,7 @@ def get_models():
         print(f"Error fetching models: {e}")
         # Fallback list if request fails
         return [
-            "llama3.1-8b-instant",
+            "llama-3.1-8b-instant",
             "llama-3.3-70b-versatile",
             "meta-llama/llama-4-scout-17b-16e-instruct",
             "qwen/qwen-32b",
