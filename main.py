@@ -51,6 +51,39 @@ class ChatResponse(BaseModel):
 class ModelSelection(BaseModel):
     model_name: str
 
+class BuyCreditsRequest(BaseModel):
+    tier: str
+
+class BuyCreditsResponse(BaseModel):
+    order_id: str
+    amount_inr: int
+    key_id: str
+
+class VerifyPaymentRequest(BaseModel):
+    razorpay_order_id: str
+    razorpay_payment_id: str
+    razorpay_signature: str
+
+class CreditsResponse(BaseModel):
+    credits: float
+    last_refill_date: str
+
+TIERS = {
+    "tier_20": {"credits": 20, "price": 255},
+    "tier_40": {"credits": 40, "price": 449},
+    "tier_90": {"credits": 90, "price": 999},
+}
+
+def check_and_refill_credits(user: User, db: Session):
+    from datetime import datetime, timezone
+    now = datetime.now(timezone.utc)
+    if user.last_refill_date.year < now.year or user.last_refill_date.month < now.month:
+        if user.credits < 5.0:
+            user.credits = 5.0
+        user.last_refill_date = now
+        db.commit()
+        db.refresh(user)
+
 @app.post("/register", response_model=UserResponse, dependencies=[Depends(get_api_key)])
 def register_user(user: UserCreate, db: Session = Depends(get_db)):
     """Register a new user with an email and password.
@@ -109,8 +142,8 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
-@app.post("/chat", response_model=ChatResponse, dependencies=[Depends(get_api_key), Depends(get_current_user)])
-async def chat(request: ChatRequest):
+@app.post("/chat", response_model=ChatResponse, dependencies=[Depends(get_api_key)])
+async def chat(request: ChatRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """Accept a chat request and invoke the AI agent for a response.
 
     Args:
@@ -119,11 +152,23 @@ async def chat(request: ChatRequest):
     Returns:
         ChatResponse with the agent-generated message.
     """
+    check_and_refill_credits(user, db)
+    
+    if user.credits < 0.5:
+        raise HTTPException(status_code=402, detail="Insufficient credits")
+
     try:
+        user.credits -= 0.5
+        db.commit()
+        db.refresh(user)
+
         # Use async helper to not block the event loop
         response = await ainvoke_agent(thread_id=request.thread_id, message=request.message)
         return ChatResponse(response=response)
     except Exception as e:
+        # Refund credits on failure
+        user.credits += 0.5
+        db.commit()
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/models", response_model=List[str], dependencies=[Depends(get_api_key), Depends(get_current_user)])
@@ -154,6 +199,69 @@ def select_model(selection: ModelSelection):
         return {"status": "success", "message": f"Model successfully changed to {selection.model_name}"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/credits", response_model=CreditsResponse, dependencies=[Depends(get_api_key)])
+def get_credits(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    check_and_refill_credits(user, db)
+    return {"credits": user.credits, "last_refill_date": user.last_refill_date.isoformat()}
+
+@app.post("/payment/create-order", response_model=BuyCreditsResponse, dependencies=[Depends(get_api_key)])
+def create_order(request: BuyCreditsRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if request.tier not in TIERS:
+        raise HTTPException(status_code=400, detail="Invalid tier")
+    
+    tier_info = TIERS[request.tier]
+    amount = tier_info["price"]
+    credits = tier_info["credits"]
+    
+    import uuid
+    from payments import create_razorpay_order, RAZORPAY_KEY_ID
+    receipt_id = f"receipt_{uuid.uuid4().hex[:8]}"
+    
+    try:
+        order = create_razorpay_order(amount, receipt_id)
+        
+        from models import PaymentTransaction
+        tx = PaymentTransaction(
+            user_id=user.id,
+            razorpay_order_id=order["id"],
+            amount_inr=amount,
+            credits_added=credits,
+            status="created"
+        )
+        db.add(tx)
+        db.commit()
+        
+        return {
+            "order_id": order["id"],
+            "amount_inr": amount,
+            "key_id": RAZORPAY_KEY_ID
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/payment/verify", dependencies=[Depends(get_api_key)])
+def verify_payment(request: VerifyPaymentRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    from payments import verify_razorpay_signature
+    from models import PaymentTransaction
+    
+    is_valid = verify_razorpay_signature(request.razorpay_order_id, request.razorpay_payment_id, request.razorpay_signature)
+    if not is_valid:
+        raise HTTPException(status_code=400, detail="Invalid signature")
+        
+    tx = db.query(PaymentTransaction).filter(PaymentTransaction.razorpay_order_id == request.razorpay_order_id).first()
+    if not tx:
+        raise HTTPException(status_code=404, detail="Order not found")
+        
+    if tx.status == "paid":
+        return {"status": "already_paid"}
+        
+    tx.status = "paid"
+    tx.razorpay_payment_id = request.razorpay_payment_id
+    user.credits += tx.credits_added
+    
+    db.commit()
+    return {"status": "success", "credits_added": tx.credits_added, "total_credits": user.credits}
 
 if __name__ == "__main__":
     import uvicorn
