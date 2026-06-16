@@ -2,11 +2,13 @@ import os
 from typing import List
 from contextlib import asynccontextmanager
 from datetime import timedelta
+import uuid
 
 from fastapi import FastAPI, HTTPException, Security, Depends, status
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.security.api_key import APIKeyHeader
-from pydantic import BaseModel
+from fastapi.middleware.cors import CORSMiddleware
+
 from dotenv import load_dotenv
 from sqlalchemy.orm import Session
 from groq import Groq
@@ -14,9 +16,11 @@ from groq import Groq
 from ai.helpers import ainvoke_agent
 from ai.agent.react_agent import set_agent_model
 
+from schemas import ChatRequest, ChatResponse, ModelSelection, BuyCreditsRequest, BuyCreditsResponse, VerifyPaymentRequest, CreditsResponse
 from db import engine, Base, get_db
-from models import User, UserCreate, UserResponse, Token
+from models import PaymentTransaction, User, UserCreate, UserResponse, Token
 from auth import get_password_hash, verify_password, create_access_token, get_current_user, ACCESS_TOKEN_EXPIRE_MINUTES
+from payments import verify_razorpay_signature, create_razorpay_order, RAZORPAY_KEY_ID
 
 load_dotenv()
 
@@ -41,32 +45,19 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Webmon API", lifespan=lifespan)
 
-class ChatRequest(BaseModel):
-    thread_id: str
-    message: str
+origins = [
+    "https://ayush2006128.github.io",
+    "http://localhost:1907",
+    "http://127.0.0.1:1907"
+]
 
-class ChatResponse(BaseModel):
-    response: str
-
-class ModelSelection(BaseModel):
-    model_name: str
-
-class BuyCreditsRequest(BaseModel):
-    tier: str
-
-class BuyCreditsResponse(BaseModel):
-    order_id: str
-    amount_inr: int
-    key_id: str
-
-class VerifyPaymentRequest(BaseModel):
-    razorpay_order_id: str
-    razorpay_payment_id: str
-    razorpay_signature: str
-
-class CreditsResponse(BaseModel):
-    credits: float
-    last_refill_date: str
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"]
+)
 
 TIERS = {
     "tier_20": {"credits": 20, "price": 255},
@@ -214,8 +205,6 @@ def create_order(request: BuyCreditsRequest, user: User = Depends(get_current_us
     amount = tier_info["price"]
     credits = tier_info["credits"]
     
-    import uuid
-    from payments import create_razorpay_order, RAZORPAY_KEY_ID
     receipt_id = f"receipt_{uuid.uuid4().hex[:8]}"
     
     try:
@@ -240,11 +229,8 @@ def create_order(request: BuyCreditsRequest, user: User = Depends(get_current_us
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/payment/verify", dependencies=[Depends(get_api_key)])
+@app.post("/payment/verify")
 def verify_payment(request: VerifyPaymentRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    from payments import verify_razorpay_signature
-    from models import PaymentTransaction
-    
     is_valid = verify_razorpay_signature(request.razorpay_order_id, request.razorpay_payment_id, request.razorpay_signature)
     if not is_valid:
         raise HTTPException(status_code=400, detail="Invalid signature")
