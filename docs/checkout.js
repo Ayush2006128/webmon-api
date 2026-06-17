@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const amount = urlParams.get('amount'); // Optional, display only
     const key_id = urlParams.get('key_id');
     const token = urlParams.get('token');
-    const api_base = urlParams.get('api_base') || ''; // Allow passing backend URL for GitHub pages
+    const api_base = urlParams.get('api_base') || 'https://webmon-api.fastapicloud.dev'; // Allow passing backend URL for GitHub pages
     
     const loadingState = document.getElementById('loading-state');
     const paymentDetails = document.getElementById('payment-details');
