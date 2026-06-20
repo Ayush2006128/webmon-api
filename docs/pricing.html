@@ -38,7 +38,7 @@
         <header class="hero" style="padding: 6rem 0 3rem;">
             <div class="badge">Scale Your Intelligence</div>
             <h1 class="hero-title">Credit Bundles.</h1>
-            <p class="hero-subtitle"><strong>We do not sell API keys!</strong> Purchase credit bundles if you have exhausted your free credits. Every request to our chat model costs just 0.5 credits.</p>
+            <p class="hero-subtitle"> Purchase credit bundles if you have exhausted your free credits. Every request to our chat model costs just 0.5 credits.</p>
         </header>
 
         <section class="grid-section" id="pricing" style="padding-top: 0;">
@@ -63,9 +63,9 @@
                     <ul style="list-style: none; padding: 0; color: var(--text-secondary); margin-bottom: 2rem;">
                         <li style="margin-bottom: 0.5rem;">✓ 20 Credits</li>
                         <li style="margin-bottom: 0.5rem;">✓ Standard Rate Limits</li>
-                        <li style="margin-bottom: 0.5rem;">✓ Discord Integration</li>
+                        <li style="margin-bottom: 0.5rem;">~13 Rupees per credit</li>
                     </ul>
-                    <button class="btn primary" style="width: 100%;">Buy Now</button>
+                    <button class="btn primary" style="width: 100%;" onclick="openBuyDialog('Starter', '₹255', '20')">Buy Now</button>
                 </div>
 
                 <div class="card">
@@ -75,10 +75,9 @@
                     <p style="margin-bottom: 2rem;">For active users and frequent synthesis.</p>
                     <ul style="list-style: none; padding: 0; color: var(--text-secondary); margin-bottom: 2rem;">
                         <li style="margin-bottom: 0.5rem;">✓ 40 Credits</li>
-                        <li style="margin-bottom: 0.5rem;">✓ Priority Processing</li>
-                        <li style="margin-bottom: 0.5rem;">✓ Dedicated Support</li>
+                        <li style="margin-bottom: 0.5rem;">~12 Rupees per credit</li>
                     </ul>
-                    <button class="btn primary" style="width: 100%;">Buy Now</button>
+                    <button class="btn primary" style="width: 100%;" onclick="openBuyDialog('Pro', '₹449', '40')">Buy Now</button>
                 </div>
                 
                 <div class="card">
@@ -88,10 +87,9 @@
                     <p style="margin-bottom: 2rem;">For large-scale, automated intelligence extraction.</p>
                     <ul style="list-style: none; padding: 0; color: var(--text-secondary); margin-bottom: 2rem;">
                         <li style="margin-bottom: 0.5rem;">✓ 90 Credits</li>
-                        <li style="margin-bottom: 0.5rem;">✓ Highest Rate Limits</li>
-                        <li style="margin-bottom: 0.5rem;">✓ Custom Integrations</li>
+                        <li style="margin-bottom: 0.5rem;">~11 Rupees per credit</li>
                     </ul>
-                    <button class="btn primary" style="width: 100%;">Buy Now</button>
+                    <button class="btn primary" style="width: 100%;" onclick="openBuyDialog('Scale', '₹999', '90')">Buy Now</button>
                 </div>
             </div>
         </section>
@@ -120,7 +118,33 @@
             </div>
         </section>
     </main>
+
+    <!-- Purchase Dialog Modal -->
+    <div id="buy-modal" class="modal" onclick="if(event.target===this) closeBuyDialog()">
+        <div class="modal-content card" style="text-align: center;">
+            <span class="close-btn" onclick="closeBuyDialog()">&times;</span>
+            <h3 style="margin-bottom: 1rem;" id="buyDialogTitle">Purchase Credits</h3>
+            <p>Credit bundles can only be purchased through <strong style="color: var(--accent-cyan);">Discord</strong> or your <strong style="color: var(--accent-cyan);">platform of choice</strong> where Webmon is available.</p>
+            <p id="buyDialogDetails" style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.75rem; opacity: 0.8;"></p>
+        </div>
+    </div>
+
+    <script>
+        function openBuyDialog(plan, price, credits) {
+            var modal = document.getElementById('buy-modal');
+            var title = document.getElementById('buyDialogTitle');
+            var details = document.getElementById('buyDialogDetails');
+            title.textContent = 'Purchase ' + plan + ' Bundle';
+            details.textContent = plan + ' \u2014 ' + credits + ' Credits for ' + price;
+            modal.style.display = 'flex';
+        }
+        function closeBuyDialog() {
+            var modal = document.getElementById('buy-modal');
+            modal.style.display = 'none';
+        }
+    </script>
     <script src="script.js"></script>
 </body>
 
 </html>
+
