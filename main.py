@@ -46,7 +46,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Webmon API", lifespan=lifespan)
 
 origins = [
-    "https://ayush2006128.github.io",
+    "https://webmon-site.onrender.com",
     "http://localhost:1907",
     "http://127.0.0.1:1907"
 ]
