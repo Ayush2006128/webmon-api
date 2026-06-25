@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, Float, DateTime
 from datetime import datetime, timezone
 from pydantic import BaseModel
-from db import Base
+from src.core.database import Base
 
 # SQLAlchemy Models
 class User(Base):
