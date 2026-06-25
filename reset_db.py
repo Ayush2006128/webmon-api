@@ -1,4 +1,4 @@
-from db import engine, Base
+from src.core.database import Base, engine
 
 def main():
 	confirm = input("It will delete all from Database! Contineu? (yes/NO): ")

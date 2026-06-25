@@ -11,6 +11,12 @@ router = APIRouter(tags=["Auth"])
 
 @router.post("/register", response_model=UserResponse, dependencies=[Depends(get_api_key)])
 def register_user(user: UserCreate, db: Session = Depends(get_db)):
+    """
+    Register a new user in the system.
+    
+    This endpoint allows the creation of a new user account with an email and password.
+    It verifies that the email is not already registered before creating the account.
+    """
     db_user = db.query(User).filter(User.email == user.email).first()
     if db_user:
         raise HTTPException(status_code=400, detail="Email already registered")
@@ -23,6 +29,12 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
 
 @router.post("/token", response_model=Token)
 def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    """
+    Authenticate a user and return a JWT access token.
+    
+    Validates user credentials (email and password) via the OAuth2PasswordRequestForm.
+    If valid, it returns an access token which can be used to authorize subsequent requests.
+    """
     user = db.query(User).filter(User.email == form_data.username).first()
     if not user or not verify_password(form_data.password, user.hashed_password): # type: ignore
         raise HTTPException(

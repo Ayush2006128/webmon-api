@@ -22,6 +22,12 @@ async def ainvoke_agent(thread_id: str, message: str) -> str:
 
 @router.post("/chat", response_model=ChatResponse, dependencies=[Depends(get_api_key)])
 async def chat(request: ChatRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """
+    Send a message to the AI agent and receive a response.
+    
+    This endpoint consumes credits per request. It checks if the user has sufficient credits,
+    deducts the cost, and then processes the message using the configured AI model.
+    """
     check_and_refill_credits(user, db)
     
     if user.credits < 0.5:
@@ -41,6 +47,12 @@ async def chat(request: ChatRequest, user: User = Depends(get_current_user), db:
 
 @router.get("/models", response_model=List[str], dependencies=[Depends(get_api_key), Depends(get_current_user)])
 def get_models():
+    """
+    Retrieve a list of available AI models.
+    
+    Fetches the available models dynamically using the Groq API. Falls back to a predefined
+    list of standard models in case of an error retrieving the dynamic list.
+    """
     try:
         client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
         models = client.models.list()
@@ -58,6 +70,12 @@ def get_models():
 
 @router.post("/model", dependencies=[Depends(get_api_key), Depends(get_current_user)])
 def select_model(selection: ModelSelection):
+    """
+    Select the AI model to be used for subsequent chat interactions.
+    
+    Updates the agent's configuration to utilize the specified model.
+    Requires the target model name to be provided.
+    """
     try:
         from src.domains.agents.graph.nodes import set_agent_model
         set_agent_model(selection.model_name)
