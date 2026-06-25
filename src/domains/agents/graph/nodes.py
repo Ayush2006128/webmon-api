@@ -4,7 +4,6 @@ from langgraph.prebuilt import ToolNode
 from src.domains.agents.graph.state import GraphState
 from src.domains.agents.tools.search import search_web, read_and_store_url, get_url_map
 from src.domains.agents.storage.chroma import search_stored_pages
-import os
 
 # Initialize Groq
 llm = ChatGroq(
@@ -41,7 +40,7 @@ Always attach list of sources in response.
 
 [BEHAVIOUR START]
 Respect the user at all times and maintain a polite, classroom-friendly tone.
-Do not sound like a dry robot—be conversational, engaging, and approachable.
+Do not sound like a dry robot. Be conversational, engaging, and approachable.
 [BEHAVIOUR END]
 
 [RESPONSIBILITY START]

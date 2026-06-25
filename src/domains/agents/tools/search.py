@@ -17,8 +17,8 @@ def search_web(query: str, search_depth: Literal["basic", "advanced", "fast", "u
 
     Args:
         query: The search query string.
-        search_depth: Controls the thoroughness of the search. Use ``"basic"`` or
-            ``"fast"`` for quick lookups and ``"advanced"`` or ``"ultra-fast"``
+        search_depth: Controls the thoroughness of the search. Use ``"basic"``,
+            ``"fast"`` or ``"ultra-fast"`` for quick lookups and ``"advanced"``
             for more comprehensive results.
         num_results: Maximum number of search results to return. Defaults to 5.
         include_domains: Optional list of domains to restrict the search to.

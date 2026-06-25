@@ -29,11 +29,24 @@ def check_and_refill_credits(user: User, db: Session):
 
 @router.get("/credits", response_model=CreditsResponse, dependencies=[Depends(get_api_key)])
 def get_credits(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """
+    Retrieve the current user's available credits.
+    
+    It also checks and automatically refills the user's base credits if a new month has started.
+    Returns the current balance and the date of the last refill.
+    """
     check_and_refill_credits(user, db)
     return {"credits": user.credits, "last_refill_date": user.last_refill_date.isoformat()}
 
 @router.post("/payment/create-order", response_model=BuyCreditsResponse, dependencies=[Depends(get_api_key)])
 def create_order(request: BuyCreditsRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """
+    Create a Razorpay payment order for purchasing credits.
+    
+    Expects a specific tier to be provided. It calculates the amount required based on the tier
+    and creates a corresponding Razorpay order, logging the transaction details.
+    Returns the order ID and required payment details.
+    """
     if request.tier not in TIERS:
         raise HTTPException(status_code=400, detail="Invalid tier")
     
@@ -66,6 +79,12 @@ def create_order(request: BuyCreditsRequest, user: User = Depends(get_current_us
 
 @router.post("/payment/verify")
 def verify_payment(request: VerifyPaymentRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """
+    Verify a completed Razorpay payment.
+    
+    Validates the payment signature against the Razorpay service. If the payment is valid
+    and hasn't been processed yet, it updates the transaction status and credits the user's account.
+    """
     is_valid = verify_razorpay_signature(request.razorpay_order_id, request.razorpay_payment_id, request.razorpay_signature)
     if not is_valid:
         raise HTTPException(status_code=400, detail="Invalid signature")
