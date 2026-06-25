@@ -4,8 +4,8 @@ from sqlalchemy.orm import Session
 from datetime import timedelta
 
 from src.core.database import get_db
-from src.core.security import get_password_hash, verify_password as verify_hashed_password, create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES, get_api_key
-from src.models import User, UserCreate, UserResponse, Token
+from src.core.security import get_password_hash, verify_password as verify_hashed_password, create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES, get_api_key, get_current_user
+from src.models import User, UserCreate, UserResponse, Token, PasswordUpdate
 from src.helper.validators import verify_email, verify_password
 
 router = APIRouter(tags=["Auth"])
@@ -52,3 +52,34 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
         data={"sub": user.email}, expires_delta=access_token_expires
     )
     return {"access_token": access_token, "token_type": "bearer"}
+
+@router.delete("/me")
+def delete_user(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """
+    Delete the currently authenticated user's account.
+    
+    This will permanently remove the user's record from the database.
+    """
+    user_id = current_user.id
+    db.delete(current_user)
+    db.commit()
+    return {"message": f"User {user_id} deleted"}
+
+@router.put("/password")
+def update_password(payload: PasswordUpdate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """
+    Update the currently authenticated user's password.
+    """
+    if not verify_hashed_password(payload.old_password, current_user.hashed_password):
+        raise HTTPException(status_code=400, detail="Incorrect old password")
+    
+    if not verify_password(payload.new_password):
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters long, alphanumeric, and contain at least one capital letter")
+    
+    if verify_hashed_password(payload.new_password, current_user.hashed_password):
+        raise HTTPException(status_code=400, detail="New password cannot be the same as the old password")
+        
+    current_user.hashed_password = get_password_hash(payload.new_password)
+    db.commit()
+    
+    return {"message": "Password updated successfully"}
