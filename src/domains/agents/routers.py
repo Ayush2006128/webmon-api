@@ -14,11 +14,26 @@ from groq import Groq
 
 router = APIRouter(tags=["Agents"])
 
-async def ainvoke_agent(thread_id: str, message: str) -> str:
+import re
+
+async def ainvoke_agent(thread_id: str, message: str) -> dict:
     config = {"configurable": {"thread_id": thread_id}}
     inputs = {"messages": [HumanMessage(content=message)]}
     response = await graph.ainvoke(inputs, config=config)
-    return response["messages"][-1].content
+    
+    sources = set()
+    for msg in response["messages"]:
+        if getattr(msg, "name", None) == "search_stored_pages":
+            content = getattr(msg, "content", "")
+            if isinstance(content, str):
+                matches = re.findall(r"Source \[\d+\] \((.*?)\):", content)
+                for m in matches:
+                    sources.add(m)
+                    
+    return {
+        "content": response["messages"][-1].content,
+        "sources": list(sources)
+    }
 
 @router.post("/chat", response_model=ChatResponse, dependencies=[Depends(get_api_key)])
 async def chat(request: ChatRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
@@ -37,12 +52,19 @@ async def chat(request: ChatRequest, user: User = Depends(get_current_user), db:
         user.credits -= 0.5
         db.commit()
         db.refresh(user)
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Database transaction failed")
 
-        response = await ainvoke_agent(thread_id=request.thread_id, message=request.message)
-        return ChatResponse(response=response)
+    try:
+        agent_result = await ainvoke_agent(thread_id=request.thread_id, message=request.message)
+        return ChatResponse(response=agent_result["content"], sources=agent_result["sources"])
     except Exception as e:
         user.credits += 0.5
-        db.commit()
+        try:
+            db.commit()
+        except Exception as commit_err:
+            db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/models", response_model=List[str], dependencies=[Depends(get_api_key), Depends(get_current_user)])

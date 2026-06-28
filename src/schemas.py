@@ -6,6 +6,7 @@ class ChatRequest(BaseModel):
 
 class ChatResponse(BaseModel):
     response: str
+    sources: list[str] = []
 
 class ModelSelection(BaseModel):
     model_name: str

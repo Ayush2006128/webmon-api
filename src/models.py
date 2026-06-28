@@ -44,6 +44,16 @@ class UserCreate(BaseModel):
     email: str
     password: str
 
+class PasswordUpdate(BaseModel):
+    """Schema for updating a user's password.
+    
+    Attributes:
+        old_password: The current password.
+        new_password: The new password to set.
+    """
+    old_password: str
+    new_password: str
+
 class UserResponse(BaseModel):
     """Schema for returning user data in API responses.
 
