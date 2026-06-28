@@ -28,9 +28,13 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
     hashed_password = get_password_hash(user.password)
     db_user = User(email=user.email, hashed_password=hashed_password)
     db.add(db_user)
-    db.commit()
-    db.refresh(db_user)
-    return db_user
+    try:
+        db.commit()
+        db.refresh(db_user)
+        return db_user
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Database transaction failed")
 
 @router.post("/token", response_model=Token)
 def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
@@ -62,8 +66,12 @@ def delete_user(current_user: User = Depends(get_current_user), db: Session = De
     """
     user_id = current_user.id
     db.delete(current_user)
-    db.commit()
-    return {"message": f"User {user_id} deleted"}
+    try:
+        db.commit()
+        return {"message": f"User {user_id} deleted"}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Database transaction failed")
 
 @router.put("/password")
 def update_password(payload: PasswordUpdate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
@@ -80,6 +88,9 @@ def update_password(payload: PasswordUpdate, current_user: User = Depends(get_cu
         raise HTTPException(status_code=400, detail="New password cannot be the same as the old password")
         
     current_user.hashed_password = get_password_hash(payload.new_password)
-    db.commit()
-    
-    return {"message": "Password updated successfully"}
+    try:
+        db.commit()
+        return {"message": "Password updated successfully"}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Database transaction failed")

@@ -24,8 +24,12 @@ def check_and_refill_credits(user: User, db: Session):
         if user.credits < 5.0:
             user.credits = 5.0
         user.last_refill_date = now
-        db.commit()
-        db.refresh(user)
+        try:
+            db.commit()
+            db.refresh(user)
+        except Exception as e:
+            db.rollback()
+            raise HTTPException(status_code=500, detail="Database transaction failed")
 
 @router.get("/credits", response_model=CreditsResponse, dependencies=[Depends(get_api_key)])
 def get_credits(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
@@ -75,6 +79,7 @@ def create_order(request: BuyCreditsRequest, user: User = Depends(get_current_us
             "key_id": RAZORPAY_KEY_ID
         }
     except Exception as e:
+        db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/payment/verify")
@@ -100,5 +105,9 @@ def verify_payment(request: VerifyPaymentRequest, user: User = Depends(get_curre
     tx.razorpay_payment_id = request.razorpay_payment_id
     user.credits += tx.credits_added
     
-    db.commit()
-    return {"status": "success", "credits_added": tx.credits_added, "total_credits": user.credits}
+    try:
+        db.commit()
+        return {"status": "success", "credits_added": tx.credits_added, "total_credits": user.credits}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Database transaction failed")
