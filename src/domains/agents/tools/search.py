@@ -5,11 +5,12 @@ from src.core.config import TAVILY_API_KEY
 from src.domains.agents.storage.chroma import vector_store
 from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+import json
 
 tavily_client = TavilyClient(api_key=TAVILY_API_KEY or "dummy_key")
 
 @tool
-def search_web(query: str, search_depth: Literal["basic", "advanced", "fast", "ultra-fast"], num_results: int = 5, include_domains: List[str] = None, exclude_domains: List[str] = None) -> dict:
+def search_web(query: str, search_depth: Literal["basic", "advanced", "fast", "ultra-fast"], num_results: int = 5, include_domains: List[str] = None, exclude_domains: List[str] = None) -> str:
     """Search the web for real-time information using the Tavily search API.
 
     Use this tool when you need up-to-date information from the internet that
@@ -25,11 +26,16 @@ def search_web(query: str, search_depth: Literal["basic", "advanced", "fast", "u
         exclude_domains: Optional list of domains to exclude from results.
 
     Returns:
-        A dictionary containing the search results with titles, URLs, and content
-        snippets.
+        A JSON string containing the search results with titles, URLs, and content
+        snippets. Returning a string ensures compatibility with the chat API's
+        expectation for tool message contents.
     """
     results = tavily_client.search(query=query, num_results=num_results, search_depth=search_depth, include_domains=include_domains, exclude_domains=exclude_domains)
-    return results
+    try:
+        return json.dumps(results, ensure_ascii=False)
+    except Exception:
+        # Fallback to a simple string representation
+        return str(results)
 
 @tool
 def read_and_store_url(urls: List[str] | str, depth: Literal["basic", "advanced"] = "basic") -> str:
@@ -74,7 +80,7 @@ def read_and_store_url(urls: List[str] | str, depth: Literal["basic", "advanced"
     return "No text content found to store."
 
 @tool
-def get_url_map(base_url: str, instructions: str) -> list:
+def get_url_map(base_url: str, instructions: str) -> str:
     """Discover and map all linked URLs on a given web page.
 
     Crawls the provided base URL and returns a list of linked pages found on it,
@@ -88,7 +94,10 @@ def get_url_map(base_url: str, instructions: str) -> list:
             links or pages to focus on (e.g., ``"find all blog post links"``).
 
     Returns:
-        A list of discovered URLs matching the provided instructions.
+        A JSON string listing discovered URLs matching the provided instructions.
     """
     results = tavily_client.map(url=base_url, instructions=instructions)
-    return results["results"]
+    try:
+        return json.dumps(results.get("results", []), ensure_ascii=False)
+    except Exception:
+        return str(results.get("results", []))
