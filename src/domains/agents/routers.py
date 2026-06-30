@@ -21,14 +21,27 @@ async def ainvoke_agent(thread_id: str, message: str) -> dict:
     inputs = {"messages": [HumanMessage(content=message)]}
     response = await graph.ainvoke(inputs, config=config)
     
+    import json
     sources = set()
     for msg in response["messages"]:
-        if getattr(msg, "name", None) == "search_stored_pages":
-            content = getattr(msg, "content", "")
-            if isinstance(content, str):
-                matches = re.findall(r"Source \[\d+\] \((.*?)\):", content)
-                for m in matches:
-                    sources.add(m)
+        msg_name = getattr(msg, "name", None)
+        content = getattr(msg, "content", "")
+        if not isinstance(content, str):
+            continue
+            
+        if msg_name == "search_stored_pages":
+            matches = re.findall(r"Source \[\d+\] \((.*?)\):", content)
+            for m in matches:
+                sources.add(m)
+        elif msg_name == "search_web":
+            try:
+                parsed = json.loads(content)
+                if isinstance(parsed, dict) and "results" in parsed:
+                    for r in parsed["results"]:
+                        if "url" in r:
+                            sources.add(r["url"])
+            except Exception:
+                pass
                     
     return {
         "content": response["messages"][-1].content,
