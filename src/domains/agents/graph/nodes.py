@@ -67,6 +67,18 @@ def summarize_conversation(state: GraphState):
     )
     messages = state["messages"] + [HumanMessage(content=prompt)]
     response = llm.invoke(messages)
-    messages_to_keep = 2
-    delete_messages = [RemoveMessage(id=m.id or "") for m in state["messages"][:-messages_to_keep]]
+    
+    delete_ids = []
+    last_human_idx = -1
+    for i in range(len(state["messages"]) - 1, -1, -1):
+        if isinstance(state["messages"][i], HumanMessage):
+            last_human_idx = i
+            break
+            
+    for i, m in enumerate(state["messages"]):
+        if i != last_human_idx and i != len(state["messages"]) - 1:
+            if m.id:
+                delete_ids.append(m.id)
+                
+    delete_messages = [RemoveMessage(id=id) for id in delete_ids]
     return {"summary": response.content, "messages": delete_messages}
